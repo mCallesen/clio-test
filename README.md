@@ -1,64 +1,88 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+Taxonomy exercise 
+====
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Endpoints
+#### Add a new node to the tree.
+```
+POST /api/employees/
+```
 
-## About Laravel
+Accepts JSON sent in a post requests. Example:
+```
+curl -X POST http://localhost:8000/api/employees/ \
+     -H 'Content-Type: application/json' \
+     -d '{"id": 1, "name": "Morten", "parent_id": 1, "job_title": "developer", "additional_info": {"type": "language", "info": "PHP"}}'
+```
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+#### Get all child nodes of a given node from the tree. (Just 1 layer of children)
+```
+GET /api/employees/get_children/<id>
+```
+A GET request to this endpoint will return a JSON representation of all children of the node with the given ID
+```
+curl http://localhost:8000/api/employees/get_children/1
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+#### Change the parent node of a given node.
+```
+POST /api/employees/update_parent/<id>
+```
+Accepts JSON sent in a POST request. The JSON must contain the id of the new parent node:
+```
+curl -X POST http://localhost:8000/api/employees/update_parent/2 \
+     -H 'Content-Type: application/json' \
+     -d '{"new_id": 1}'
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## The models
+Most of the program revolves around the Employee model and its controller. This class contains the requested information.
+In addition, there are two subclasses of Employee, Developer and Manager which mostly differs from Employee by having different validation rules.
 
-## Learning Laravel
+I chose to implement the extra fields for developer/manager as a model related to Employee. This model is called AdditionalInfo and contains two fields, type and info, which are both strings.
+The AdditionalInfo is required when adding a developer or manager.  
+I did it this way because I wanted to avoid adding fields to the Employee table that might be null most of the time, depending on how many different types of employees you have. In addition, it makes it pretty easy to add special fields for other types of employees.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## How to run it
+### Requirements
+The program was created with php 7.4.3, Laravel 8.55.0 and sqlite3 3.31.1.
+In addition, I needed to install the following programs:
+```
+sudo apt install php-xml php-mbstring php7.4-sqlite3
+```
 
-## Laravel Sponsors
+### Setup
+To setup the database, go to the app/database folder and write 
+```
+touch database.sqlite
+```
+Now open the .env file in the project root and replace the path in the line: 
+```
+DB_DATABASE=/home/morten/code_stuff/lv_training/clio-test/database/database.sqlite
+```
+with the path to you newly created database.sqlite file.
+Let's just mention for good measure that it's usually a bad idea to leave .env files out in the open, but since this doesn't contain anything dangerous and the project is only for running locally, it should be okay.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+Now, in the project root, run the command to create the necessary tables and create a root node:
+```
+php artisan migrate
+php artisan db:seed
+```
 
-### Premium Partners
+If everything's gone well so far, you should be able to run the program by running the command:
+```
+php artisan serve
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[CMS Max](https://www.cmsmax.com/)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
 
-## Contributing
+## Improvements 
+I imagine there are quite a few since this is my first Laravel project, but here are some things I would like to have done if I had more time:
+- Add tests.
+- Make a docker image to run the application, the setup is a bit too complicated.
+- Add proper validation.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+I also had some problems with handling the related AdditionalInfo class when parsing the JSON in the add_node function into an Employee object.  
+I ended up making a not very pretty workaround (which can be seen in the add_node function in app\Http\Controllers\EmployeeController.php) that manually sets the additional_info property on the Employee and does a lot of stuff manually that I'm sure Laravel can handle for me. Would like to fix it.
 
-## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

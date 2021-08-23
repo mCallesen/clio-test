@@ -9,14 +9,18 @@ class Employee extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'height', 'parent_id'];
+    protected $fillable = ['name', 'height', 'parent_id', 'job_title'];
+    protected $hidden = ['created_at', 'updated_at'];
+
+    public function additional_info()
+    {
+        return $this->hasOne(AdditionalInfo::class, 'employee_id', 'id');
+    }
 
     public function get_parent() {
         if (is_null($this->parent_id)) {
             return null;
         }
-
-        $hest = Employee::find($this->parent_id);
 
         return Employee::find($this->parent_id);
     }
@@ -47,5 +51,14 @@ class Employee extends Model
         }
 
         return is_null($existing->parent_id);
+    }
+
+    public function validate() 
+    {
+        if (is_null($this->get_parent())) {
+            return array(false, 'Parent not found');
+        }
+
+        return array(true, '');
     }
 }

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\Developer;
+use App\Models\Manager;
+use App\Models\AdditionalInfo;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
@@ -16,31 +19,57 @@ class EmployeeController extends Controller
 
 
     public function index() {
-        return Employee::all();
+        return Employee::with('additional_info')->get();
     }
 
     public function add_node(Request $request) {
-        $employee = new Employee($request->all());
+        $job_title = strtolower($request->input('job_title'));
+        switch ($job_title)
+        {
+            case 'developer':
+                $employee = new Developer($request->all());
+                // TODO: Add check for existence of additonal_info
+                $additional = new AdditionalInfo($request->input('additional_info'));
+                $employee->additional_info = $additional;
+                break;
+            case 'manager':
+                $employee = new Manager($request->all());
+                $additional = new AdditionalInfo($request->input('additional_info'));
+                $employee->additional_info = $additional;
+                break;
+            default:
+                $employee = new Employee($request->all());
+        }
         
-        if (is_null($employee->get_parent())) {
-            return $this->return_error_response('Parent not found');
+        $validation_data = $employee->validate();
+        if (!$validation_data[0])
+        {
+            return $this->return_error_response($validation_data[1]);
         }
 
         $employee->set_height();
 
+        // It'll try to save a column named additional_info if the attribute exists
+        unset($employee->additional_info);
+
         if (!$employee->save()) {
             return $this->return_error_response('Unable to save');
+        }
+
+        // TODO: Figure out how to make Eloquent handle the saving of relations
+        if (property_exists($employee, 'additional_info')) {
+            $additional->employee_id = $employee->id;
+            $additional->save();
         }
 
         return response()->json([
             'status' => 'ok',
             'message' => 'Created', 
         ]);
-        
     }
 
     public function get_children(Employee $employee) {
-        $children = Employee::where('parent_id', $employee->id)->get();
+        $children = Employee::where('parent_id', $employee->id)->with('additional_info')->get();
         return response()->json($children);
     }
 

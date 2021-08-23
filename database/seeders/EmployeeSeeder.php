@@ -21,6 +21,7 @@ class EmployeeSeeder extends Seeder
         Employee::create([
             'name' => 'root',
             'height' => 0,
+            'job_title' => 'CEO',
         ]);
     }
 }

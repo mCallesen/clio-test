@@ -17,7 +17,8 @@ class Employee extends Model
         return $this->hasOne(AdditionalInfo::class, 'employee_id', 'id');
     }
 
-    public function get_parent() {
+    public function get_parent()
+    {
         if (is_null($this->parent_id)) {
             return null;
         }
@@ -25,7 +26,8 @@ class Employee extends Model
         return Employee::find($this->parent_id);
     }
 
-    public function calculate_height()  {
+    public function calculate_height()
+    {
         $count = 0;
         $current = $this->get_parent();
         while (!is_null($current)) {
@@ -36,12 +38,14 @@ class Employee extends Model
         return $count;
     }
 
-    //TODO: make this private and run it on every insert?
-    public function set_height() {
+    //TODO: make this private and run it on every insert
+    public function set_height()
+    {
         $this->height = $this->calculate_height();
     }
 
-    public function is_root() {
+    public function is_root()
+    {
         // We need to make sure that we're working with the actual parent_id stored in the db
         $existing = Employee::find($this->id);
         

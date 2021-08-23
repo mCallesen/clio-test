@@ -18,8 +18,7 @@ class Manager extends Employee
             return $parent_validation;
         }
 
-        if ($this->additional_info->type != 'department')
-        {
+        if ($this->additional_info->type != 'department') {
             return array(false, 'No department provided');
         }
 

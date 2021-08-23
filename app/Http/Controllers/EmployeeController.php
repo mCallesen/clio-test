@@ -10,22 +10,28 @@ use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
-    private function return_error_response($message) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $message, 
-        ]);
+    private function _return_error_message($message)
+    {
+        return response()->json(
+            [
+                'status' => 'error',
+                'message' => $message, 
+            ]
+        );
     }
 
 
-    public function index() {
+    public function index()
+    {
         return Employee::with('additional_info')->get();
     }
 
-    public function add_node(Request $request) {
+    public function add_node(Request $request) 
+    {
+        // TODO: Check if it's actually there
         $job_title = strtolower($request->input('job_title'));
-        switch ($job_title)
-        {
+
+        switch ($job_title) {
             case 'developer':
                 $employee = new Developer($request->all());
                 // TODO: Add check for existence of additonal_info
@@ -42,9 +48,8 @@ class EmployeeController extends Controller
         }
         
         $validation_data = $employee->validate();
-        if (!$validation_data[0])
-        {
-            return $this->return_error_response($validation_data[1]);
+        if (!$validation_data[0]) {
+            return $this->_return_error_message($validation_data[1]);
         }
 
         $employee->set_height();
@@ -53,7 +58,7 @@ class EmployeeController extends Controller
         unset($employee->additional_info);
 
         if (!$employee->save()) {
-            return $this->return_error_response('Unable to save');
+            return $this->_return_error_message('Unable to save');
         }
 
         // TODO: Figure out how to make Eloquent handle the saving of relations
@@ -62,34 +67,38 @@ class EmployeeController extends Controller
             $additional->save();
         }
 
-        return response()->json([
-            'status' => 'ok',
-            'message' => 'Created', 
-        ]);
+        return response()->json(
+            [
+                'status' => 'ok',
+                'message' => 'created', 
+            ]
+        );
     }
 
-    public function get_children(Employee $employee) {
+    public function get_children(Employee $employee)
+    {
         $children = Employee::where('parent_id', $employee->id)->with('additional_info')->get();
         return response()->json($children);
     }
 
-    public function update_parent(Request $request, Employee $employee) {
+    public function update_parent(Request $request, Employee $employee)
+    {
         //TODO: Google how to do validation properly in Laravel
         $new_id = $request->post('new_id', null);
         if (is_null($new_id)) {
-            return $this->return_error_response('ID not provided');
+            return $this->_return_error_message('ID not provided');
         }
 
         if ($employee->id == $new_id) {
-            return $this->return_error_response('A node cannot be its own parent');
+            return $this->_return_error_message('A node cannot be its own parent');
         }
 
         if ($employee->is_root()) {
-            return $this->return_error_response('The root node cannot have its parent changed');
+            return $this->_return_error_message('The root node cannot have its parent changed');
         }
 
         if (is_null(Employee::find($new_id))) {
-            return $this->return_error_response('Invalid parent ID');
+            return $this->_return_error_message('Invalid parent ID');
         }
 
         $employee->parent_id = $new_id;
@@ -97,12 +106,14 @@ class EmployeeController extends Controller
         
         if (!$employee->update()) {
             // TODO: Find out if there's some sort of error that can be logged
-            return $this->return_error_response('Unable to save');
+            return $this->_return_error_message('Unable to save');
         }
 
-        return response()->json([
-            'status' => 'ok',
-            'message' => 'updated', 
-        ]);
+        return response()->json(
+            [
+                'status' => 'ok',
+                'message' => 'updated', 
+            ]
+        );
     }  
 }

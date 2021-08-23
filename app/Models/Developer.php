@@ -18,8 +18,7 @@ class Developer extends Employee
             return $parent_validation;
         }
 
-        if ($this->additional_info->type != 'language')
-        {
+        if ($this->additional_info->type != 'language') {
             return array(false, 'No language provided');
         }
 

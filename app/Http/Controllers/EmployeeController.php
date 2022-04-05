@@ -69,7 +69,7 @@ class EmployeeController extends Controller
 
         return response()->json(
             [
-                'status' => 'hest',
+                'status' => 'hest med hat',
                 'message' => 'created', 
             ]
         );
